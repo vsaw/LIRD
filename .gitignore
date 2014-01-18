@@ -34,3 +34,9 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+# Mac OS X Files
+.DS_Store
+
+# IntelliJ/PyCharm stuff
+.idea

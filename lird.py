@@ -90,6 +90,8 @@ def _prepare_classifiers():
 def _prepare_data_sets():
     '''
     Loads and names all desired datasets into a dirctionary
+    TODO proper cross validation see
+    http://scikit-learn.org/stable/modules/cross_validation.html#cross-validation
     '''
     datasets = {}
     datasets['Out of the Box Integer Data'] = _prepare_data_set()

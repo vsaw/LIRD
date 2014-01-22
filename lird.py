@@ -19,7 +19,12 @@ def _parse_csv(filename, typeCast=int):
     X = []
     y = []
     for row in data:
-        y.append(row[0])
+        # sklearn classifiers expect classes to be integers.
+        #
+        # The classes in the set however are stored as characters so they are
+        # converted to their ASCII ordinal on load. Otherwise some classifiers
+        # (e.g. DecisionTreeClassifier) fail to run or produce false results.
+        y.append(ord(row[0]))
         X.append([typeCast(r) for r in row[1:len(row)]])
     return (y, X)
 

@@ -7,6 +7,7 @@ from sklearn import svm
 from sklearn import tree
 from sklearn import neighbors
 from sklearn import preprocessing
+from sklearn import multiclass
 #from sklearn.externals.six import StringIO
 
 
@@ -84,11 +85,18 @@ def _prepare_classifiers():
     classifiers = {}
     # see http://scikit-learn.org/stable/modules/svm.html#classification
     classifiers['Support Vector'] = svm.SVC()
+    classifiers['Support Vector with kernel=linear'] = svm.SVC(kernel='linear')
+    classifiers['Support Vector with kernel=linear OvR'] = multiclass.OneVsRestClassifier(svm.SVC(kernel='linear'))
+    classifiers['Support Vector with kernel=poly'] = svm.SVC(kernel='poly')
+    classifiers['Support Vector with kernel=sigmoid'] = svm.SVC(kernel='sigmoid')
+    classifiers['Linear SVC'] = svm.LinearSVC()
     # see http://scikit-learn.org/stable/modules/tree.html
     classifiers['Decision Tree'] = tree.DecisionTreeClassifier()
     # see http://scikit-learn.org/stable/auto_examples/neighbors/plot_classification.html#example-neighbors-plot-classification-py
     classifiers['K Nearest Naighbors'] = neighbors.KNeighborsClassifier(15,
                                                                         weights='uniform')
+    # Disabled because of horrible performance
+    # classifiers['NuSVC'] = svm.NuSVC()
     return classifiers
 
 

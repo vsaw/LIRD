@@ -8,8 +8,10 @@ from sklearn import tree
 from sklearn import neighbors
 from sklearn import preprocessing
 from sklearn import multiclass
+from sklearn import cross_validation
 #from sklearn.externals.six import StringIO
 import argparse
+import exceptions
 
 
 # Stores the parsed command line args
@@ -47,7 +49,7 @@ def _evaluate_calssifier(clf, trainingSet, validationSet):
     t = time.time()
     clf.fit(tVectors, tLabels)
     elapsed = time.time() - t
-    print '        Training in %d Seconds' % elapsed
+    print '        Training %d elements in %d Seconds' % (len(tVectors), elapsed)
     t = time.time()
     pLabels = clf.predict(vVectors)
     elapsed = time.time() - t
@@ -72,18 +74,30 @@ def _evaluate_classifiers(classifiers, datasets):
             print ' '
 
 
-def _prepare_data_set(trainingSetSize=16000, type=int, scale=False):
+def __get_as_int_or_float(num):
+    # TODO Document
+    try:
+        if int(num) > 1:
+            return int(num)
+    except exceptions.ValueError:
+        return float(num)
+
+
+def _prepare_data_set(trainingSetSize=16000, test_size=None, type=int, scale=False):
     '''
     Load training and validation data in desired format
     '''
+    train_size = __get_as_int_or_float(trainingSetSize)
+    if not test_size is None:
+        test_size = __get_as_int_or_float(test_size)
+ 
     (labels, vectors) = _parse_csv('res/letter-recognition.data', type)
     if (scale):
         vectors = preprocessing.scale(np.array(vectors))
-    trainingSet = (labels[0:trainingSetSize], vectors[0:trainingSetSize])
-    validationSet = (
-        labels[trainingSetSize:len(labels)],
-        vectors[trainingSetSize:len(vectors)])
-    return (trainingSet, validationSet)
+
+    x_train, x_test, y_train, y_test = cross_validation.train_test_split(
+        vectors, labels, test_size=test_size, train_size=train_size)
+    return ((y_train, x_train), (y_test, x_test))
 
 
 def _prepare_classifiers(cmd_class=['all']):
@@ -109,7 +123,7 @@ def _prepare_classifiers(cmd_class=['all']):
     return classifiers
 
 
-def _prepare_data_sets(train_size, sets):
+def _prepare_data_sets(train_size, test_size, sets):
     '''
     Loads and names all desired datasets into a dirctionary
     TODO proper cross validation see
@@ -117,9 +131,11 @@ def _prepare_data_sets(train_size, sets):
     '''
     datasets = {}
     if 'both' in sets or 'orig' in sets:
-        datasets['Out of the Box Integer Data'] = _prepare_data_set(train_size)
+        datasets['Out of the Box Integer Data'] = _prepare_data_set(train_size,
+                                                                    test_size)
     if 'both' in sets or 'scaled' in sets:
         datasets['Normalizerd Float Data'] = _prepare_data_set(train_size,
+                                                               test_size,
                                                                float, True)
     return datasets
 
@@ -149,10 +165,16 @@ def _parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--verbose', type=int, nargs=1, default=1,
                         help='verbose level, default = 1', choices=range(1,4))
-    parser.add_argument('--train-size', type=int, default=16000,
-                        help='amount of data used for training, rest will be \
-                              used for validation',
-                        action='store')
+    parser.add_argument('--train-size', default=16000, action='store',
+                        help='amount of data used for training. Can be either \
+                              an int representing the absolute number of \
+                              samples or a float between 0 and 1.0 \
+                              representing the ratio of train samples')
+    parser.add_argument('--test-size', default=None, action='store',
+                        help='amount of data used for testing, if not \
+                              specified the rest of the data set will be used \
+                              Like the train-size this can either be a int or \
+                              a float')
     parser.add_argument('--data', action='store', default=['both'],
                         choices=['both', 'orig', 'scaled'])
     parser.add_argument('classifiers', nargs='*', default='all',
@@ -165,7 +187,7 @@ def _parse_args():
 def main():
     _parse_args()
     classifiers = _prepare_classifiers(args.classifiers)
-    datasets = _prepare_data_sets(args.train_size, args.data)
+    datasets = _prepare_data_sets(args.train_size, args.test_size, args.data)
     _evaluate_classifiers(classifiers, datasets)
     if 'all' in args.classifiers or 'tree' in args.classifiers:
         _write_dot_file(classifiers['Decision Tree'])

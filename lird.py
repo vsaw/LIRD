@@ -9,6 +9,7 @@ from sklearn import neighbors
 from sklearn import preprocessing
 from sklearn import multiclass
 from sklearn import cross_validation
+from sklearn import metrics
 #from sklearn.externals.six import StringIO
 import argparse
 import exceptions
@@ -37,6 +38,25 @@ def _parse_csv(filename, typeCast=int):
     return (y, X)
 
 
+def __print_confusion_matrix(cm, labels):
+    '''
+    Print the confusion matrix in a nice way
+    This will leave out 0 entries and label the columns and rows
+    '''
+    print ' ',
+    for label in labels:
+        print '   %s' % label,
+
+    for i in range(cm.size):
+        if i % len(labels) == 0:
+            print ''
+            print labels[i / len(labels)],
+        if not cm.item(i) == 0:
+            print '%4d' % cm.item(i),
+        else:
+            print 4 * ' ',
+
+
 def _evaluate_calssifier(clf, trainingSet, validationSet):
     '''
     Trains the given classifier clf with the training set and compares the
@@ -57,6 +77,15 @@ def _evaluate_calssifier(clf, trainingSet, validationSet):
     errCount = sum([1 for (p, v) in zip(pLabels, vLabels) if p != v])
     print '        %f%%: %s errors out of %s validation vectors' % \
         (100. * float(errCount) / len(vVectors), errCount, len(vVectors))
+    if args.verbose[0] > 2:
+        label_names = map(lambda x: chr(x), range(ord('A'), ord('Z') + 1))
+        print '        Classification Report:'
+        print metrics.classification_report(vLabels, pLabels,
+                                            target_names=label_names)
+        print '        Confusion Matrix:'
+        cm = metrics.confusion_matrix(vLabels, pLabels,
+                                      range(ord('A'), ord('Z') + 1))
+        __print_confusion_matrix(cm, label_names)
 
 
 def _evaluate_classifiers(classifiers, datasets):

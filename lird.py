@@ -38,6 +38,25 @@ def _parse_csv(filename, typeCast=int):
     return (y, X)
 
 
+def __print_confusion_matrix(cm, labels):
+    '''
+    Print the confusion matrix in a nice way
+    This will leave out 0 entries and label the columns and rows
+    '''
+    print ' ',
+    for label in labels:
+        print '   %s' % label,
+
+    for i in range(cm.size):
+        if i % len(labels) == 0:
+            print ''
+            print labels[i / len(labels)],
+        if not cm.item(i) == 0:
+            print '%4d' % cm.item(i),
+        else:
+            print 4 * ' ',
+
+
 def _evaluate_calssifier(clf, trainingSet, validationSet):
     '''
     Trains the given classifier clf with the training set and compares the
@@ -61,9 +80,12 @@ def _evaluate_calssifier(clf, trainingSet, validationSet):
     if args.verbose[0] > 2:
         label_names = map(lambda x: chr(x), range(ord('A'), ord('Z') + 1))
         print '        Classification Report:'
-        print metrics.classification_report(vLabels, pLabels, target_names=label_names)
+        print metrics.classification_report(vLabels, pLabels,
+                                            target_names=label_names)
         print '        Confusion Matrix:'
-        print metrics.confusion_matrix(vLabels, pLabels, range(ord('A'), ord('Z') + 1))
+        cm = metrics.confusion_matrix(vLabels, pLabels,
+                                      range(ord('A'), ord('Z') + 1))
+        __print_confusion_matrix(cm, label_names)
 
 
 def _evaluate_classifiers(classifiers, datasets):
@@ -192,9 +214,6 @@ def _parse_args():
 
 
 def main():
-    # See http://docs.scipy.org/doc/numpy/reference/generated/numpy.set_printoptions.html#numpy.set_printoptions 
-    # if not used the confusion matrix has ugly line breaks
-    np.set_printoptions(linewidth=200)
     _parse_args()
     classifiers = _prepare_classifiers(args.classifiers)
     datasets = _prepare_data_sets(args.train_size, args.test_size, args.data)

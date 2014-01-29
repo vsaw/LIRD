@@ -172,7 +172,12 @@ def _prepare_classifiers(cmd_class=['all']):
             elif k == 'linear-svc':
                 classifiers['Linear SVC'] = svm.LinearSVC()
             else:
-                classifiers['SVC kernel=%s' % k] = svm.SVC(kernel=k)
+                g = 0.0
+                if k == 'sigmoid':
+                    # TODO: Document this magic number
+                    # Maximum dot product of the vectors in our data set
+                    g = 1.0/962.0
+                classifiers['SVC kernel=%s' % k] = svm.SVC(kernel=k, gamma=g)
     if has_all or 'tree' in cmd_class:
         # see http://scikit-learn.org/stable/modules/tree.html
         classifiers['Default Decision Trees'] = tree.DecisionTreeClassifier()

@@ -162,17 +162,22 @@ def _prepare_classifiers(cmd_class=['all']):
     has_all = 'all' in cmd_class
     if has_all or 'svm' in cmd_class:
         # see http://scikit-learn.org/stable/modules/svm.html#classification
-        classifiers['Support Vector'] = svm.SVC()
-        classifiers['Support Vector with kernel=linear'] = svm.SVC(
-            kernel='linear')
-        classifiers[
-            'Support Vector with kernel=linear OvR'] = multiclass.OneVsRestClassifier(
-            svm.SVC(kernel='linear'))
-        classifiers['Support Vector with kernel=poly'] = svm.SVC(kernel='poly')
-        classifiers['Support Vector with kernel=sigmoid'] = svm.SVC(
-            kernel='sigmoid')
-        classifiers['Linear SVC'] = svm.LinearSVC()
-
+        kernels = args.svm_kernels
+        if 'all' in kernels:
+            kernels = ['linear-svc', 'linear-ovr', 'linear', 'poly', 'rbf',
+                       'sigmoid']
+        for k in kernels:
+            if k == 'linear-ovr':
+                classifiers['SVC kernel=linear OvR'] = multiclass.OneVsRestClassifier(svm.SVC(kernel='linear'))
+            elif k == 'linear-svc':
+                classifiers['Linear SVC'] = svm.LinearSVC()
+            else:
+                g = 0.0
+                if k == 'sigmoid':
+                    # TODO: Document this magic number
+                    # Maximum dot product of the vectors in our data set
+                    g = 1.0/962.0
+                classifiers['SVC kernel=%s' % k] = svm.SVC(kernel=k, gamma=g)
     if has_all or 'tree' in cmd_class:
         # see http://scikit-learn.org/stable/modules/tree.html
         classifiers['Default Decision Trees'] = tree.DecisionTreeClassifier()
@@ -257,6 +262,12 @@ def _parse_args():
                               a float')
     parser.add_argument('--data', action='store', default=['all'],
                         choices=['all', 'orig', 'scaled'])
+    parser.add_argument('--svm-kernels', action='store', default=['all'],
+                        choices=['all', 'rbf', 'linear', 'linear-ovr', 'poly',
+                                 'sigmoid'],
+                        nargs='*',
+                        help='select the kernels that should be trained for the\
+                              SVM. by default all will be trained')
     parser.add_argument('classifiers', nargs='*', default='all',
                         choices=['all', 'svm', 'kNN', 'tree'])
     global args

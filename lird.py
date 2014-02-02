@@ -86,7 +86,7 @@ def _evaluate_calssifier(clf, trainingSet, validationSet):
 
     score = clf.score(vVectors, vLabels)
 
-    if (args.verbose[0] > 2):
+    if (args.verbose > 2):
         print '        Training %d elements in %d Seconds, Prediction in %d ' \
               'Seconds' % (len(tVectors), trainingTime, validationTime)
         errCount = sum([1 for (p, v) in zip(pLabels, vLabels) if p != v])
@@ -101,7 +101,7 @@ def _evaluate_calssifier(clf, trainingSet, validationSet):
         cm = metrics.confusion_matrix(vLabels, pLabels,
                                       labelEncoder.transform(label_names))
         __print_confusion_matrix(cm, label_names)
-    elif (args.verbose[0] > 1):
+    elif (args.verbose > 1):
         print '        %.2f%% Accuracy' % (score * 100)
 
     return score
@@ -114,16 +114,16 @@ def _evaluate_classifiers(classifiers, datasets):
     '''
     quality = {}
     for setKey in datasets.keys():
-        if (args.verbose[0] > 1):
+        if (args.verbose > 1):
             print 'Using Dataset %s :' % setKey
         (trainingSet, validationSet) = datasets[setKey]
         for clfKey in classifiers.keys():
-            if (args.verbose[0] > 1):
+            if (args.verbose > 1):
                 print '    %s :' % clfKey
             score = _evaluate_calssifier(classifiers[clfKey], trainingSet,
                                          validationSet)
             quality[clfKey] = score
-            if (args.verbose[0] > 1):
+            if (args.verbose > 1):
                 print ' '
     return quality
 
@@ -248,7 +248,7 @@ def _parse_args():
     Parse the command line arguments to select test at runtime
     '''
     parser = argparse.ArgumentParser()
-    parser.add_argument('-v', '--verbose', type=int, nargs=1, default=1,
+    parser.add_argument('-v', '--verbose', type=int, action='store', default=1,
                         help='verbose level, default = 1', choices=range(1, 4))
     parser.add_argument('--train-size', default=16000, action='store',
                         help='amount of data used for training. Can be either \
@@ -272,7 +272,6 @@ def _parse_args():
                         choices=['all', 'svm', 'kNN', 'tree'])
     global args
     args = parser.parse_args()
-    pass
 
 
 def frange(start, stop, step):

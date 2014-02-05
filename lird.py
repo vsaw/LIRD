@@ -25,6 +25,10 @@ args = None
 # The label encoder will be instantiated during data parsing.
 labelEncoder = None
 
+# This label will be applied by the RadiusNeighborsClassifier to detect outliers
+# in the data set.
+OUTLIER_LABEL = '?'
+
 def _parse_csv(filename, typeCast=int):
     '''
     Parse data from CSV and return (y,X) with y a array of labels and X array
@@ -42,9 +46,11 @@ def _parse_csv(filename, typeCast=int):
     # use preprocessing to encode the labels accordingly
     global labelEncoder
     labelEncoder = preprocessing.LabelEncoder()
-    labelEncoder.fit(y);
+    # Add an extra outlier label '?' to the list of labels so that methods like
+    # RadiusNeighborsClassifier that detect outliers can give them a
+    # indistinguishable label.
+    labelEncoder.fit(y + [OUTLIER_LABEL]);
     y = labelEncoder.transform(y)
-
 
     return (y, X)
 

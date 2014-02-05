@@ -262,7 +262,7 @@ def _prepare_classifiers(cmd_class=['all']):
                 show_knn_warnings = args.verbose > 3
                 for k in args.kNN_neighbors:
                     classifiers['kNN %s k=%d' % (weight, int(k))] = \
-                        neighbors.KNeighborsClassifier(k, weights = weight,
+                        neighbors.KNeighborsClassifier(k, weights=weight,
                             warn_on_equidistant=show_knn_warnings)
             if 'rNN' in cmd_class:
                 # XXX: Buggy scikit does not handle the distance weight
@@ -292,8 +292,8 @@ def _prepare_classifiers(cmd_class=['all']):
                 outlier_class = labelEncoder.transform([OUTLIER_LABEL])
                 for r in args.rNN_radius:
                     classifiers['rNN %s r=%f' % (weight, float(r))] = \
-                        neighbors.RadiusNeighborsClassifier(radius = r,
-                            weights = weight, outlier_label = outlier_class)
+                        neighbors.RadiusNeighborsClassifier(radius=r,
+                            weights=weight, outlier_label=outlier_class)
 
     # Disabled because of horrible performance
     # classifiers['NuSVC'] = svm.NuSVC()

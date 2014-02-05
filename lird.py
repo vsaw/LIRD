@@ -10,8 +10,9 @@ from sklearn import preprocessing
 from sklearn import multiclass
 from sklearn import cross_validation
 from sklearn import metrics
-from sklearn.ensemble import ExtraTreesClassifier
+from sklearn import ensemble
 from sklearn.pipeline import Pipeline
+from math import sqrt
 import argparse
 import exceptions
 
@@ -86,9 +87,11 @@ def _evaluate_calssifier(clf, trainingSet, validationSet):
 
     score = clf.score(vVectors, vLabels)
 
-    if (args.verbose > 2):
+    if (args.verbose > 1):
         print '        Training %d elements in %d Seconds, Prediction in %d ' \
               'Seconds' % (len(tVectors), trainingTime, validationTime)
+
+    if (args.verbose > 2):
         errCount = sum([1 for (p, v) in zip(pLabels, vLabels) if p != v])
         print '        %s errors out of %s validation vectors' % (errCount,
                                                                   len(
@@ -104,7 +107,7 @@ def _evaluate_calssifier(clf, trainingSet, validationSet):
     elif (args.verbose > 1):
         print '        %.2f%% Accuracy' % (score * 100)
 
-    return score
+    return (score, trainingTime)
 
 
 def _evaluate_classifiers(classifiers, datasets):
@@ -120,9 +123,10 @@ def _evaluate_classifiers(classifiers, datasets):
         for clfKey in classifiers.keys():
             if (args.verbose > 1):
                 print '    %s :' % clfKey
-            score = _evaluate_calssifier(classifiers[clfKey], trainingSet,
-                                         validationSet)
-            quality[clfKey] = score
+            res = _evaluate_calssifier(classifiers[clfKey],
+                                       trainingSet,
+                                       validationSet)
+            quality[clfKey] = res
             if (args.verbose > 1):
                 print ' '
     return quality
@@ -159,6 +163,7 @@ def _prepare_data_set(trainingSetSize=16000, test_size=None, type=int,
 
 def _prepare_classifiers(cmd_class=['all']):
     classifiers = {}
+    select = args.select_features
     has_all = 'all' in cmd_class
     if has_all or 'svm' in cmd_class:
         # see http://scikit-learn.org/stable/modules/svm.html#classification
@@ -168,7 +173,9 @@ def _prepare_classifiers(cmd_class=['all']):
                        'sigmoid']
         for k in kernels:
             if k == 'linear-ovr':
-                classifiers['SVC kernel=linear OvR'] = multiclass.OneVsRestClassifier(svm.SVC(kernel='linear'))
+                classifiers[
+                    'SVC kernel=linear OvR'] = multiclass.OneVsRestClassifier(
+                    svm.SVC(kernel='linear'))
             elif k == 'linear-svc':
                 classifiers['Linear SVC'] = svm.LinearSVC()
             else:
@@ -176,28 +183,68 @@ def _prepare_classifiers(cmd_class=['all']):
                 if k == 'sigmoid':
                     # TODO: Document this magic number
                     # Maximum dot product of the vectors in our data set
-                    g = 1.0/962.0
+                    g = 1.0 / 962.0
                 classifiers['SVC kernel=%s' % k] = svm.SVC(kernel=k, gamma=g)
     if has_all or 'tree' in cmd_class:
         # see http://scikit-learn.org/stable/modules/tree.html
-        classifiers['Default Decision Trees'] = tree.DecisionTreeClassifier()
-        classifiers['Default Decision Trees Feature selection Pipeline'] = \
-            pipe = Pipeline([('selection', ExtraTreesClassifier()),
-                        ('classification', tree.DecisionTreeClassifier())])
+        if select == 'off' or select == 'both':
+            classifiers['Default Decision Trees'] = tree.DecisionTreeClassifier()
+        if select == 'on' or select == 'both':
+            classifiers['Default Decision Trees Feature selection Pipeline'] = \
+            Pipeline([('selection', ensemble.ExtraTreesClassifier()),
+                             ('classification',tree.DecisionTreeClassifier())])
 
-        for f in frange(0.85, 0.90, 0.024):
+        for maxf in frange(0.85, 0.90, 0.024):
             for c in ['entropy', 'gini']:
-                clf = tree.DecisionTreeClassifier(max_features=f, criterion=c)
-                pipe = Pipeline([('selection', ExtraTreesClassifier()),
-                        ('classification', clf)])
+                clf = tree.DecisionTreeClassifier(max_features=maxf, criterion=c)
 
-                classifiers['Max Features %.2f with %s Decision Trees' % (f, c)
-                ] = clf
+                if select == 'on' or select == 'both':
+                    pipe = Pipeline([('selection', ensemble
+                    .ExtraTreesClassifier()),
+                                     ('classification', clf)])
+                    classifiers['Max Features %.2f with %s Decision Trees ' \
+                                'Feature selection Pipeline' % (
+                                    maxf, c)] = pipe
+                if select == 'off' or select == 'both':
+                    classifiers['Max Features %.2f with %s Decision Trees' %
+                                (maxf, c)] = clf
 
-                classifiers['Max Features %.2f with %s Decision Trees ' \
-                            'Feature selection Pipeline' % (f, c)
-                ] = pipe
+    if has_all or 'random' in cmd_class:
+        for i in range(10):
+            classifiers['Random Tree #%d' % i] = tree \
+                .ExtraTreeClassifier()
 
+    if has_all or 'ensemble' in cmd_class:
+        min_trees = args.min_trees
+        max_trees = args.max_trees
+        step = 0
+        divisor = 10
+
+        while step < 1:
+            step = int((max_trees - min_trees)/divisor)
+            divisor -= 1
+
+        for trees in range(min_trees, max_trees+1, step):
+            clf1 = ensemble.RandomForestClassifier(bootstrap=False,
+                                                   n_estimators=trees)
+            clf2 = ensemble.ExtraTreesClassifier(bootstrap=False,
+                                                 n_estimators=trees)
+
+            if select == 'on' or select == 'both':
+                pipe1 = Pipeline([('selection', ensemble
+                .ExtraTreesClassifier()),
+                                  ('classification', clf1)])
+                pipe2 = Pipeline([('selection', ensemble
+                .ExtraTreesClassifier()),
+                                  ('classification', clf2)])
+                classifiers['%d Random Forest ' \
+                            'Feature selection Pipeline' % trees] = pipe1
+                classifiers['%d Extra Random Trees ' \
+                            'Feature selection Pipeline' % trees] = pipe2
+
+            if select == 'off' or select == 'both':
+                classifiers['%d Random Forest' % trees] = clf1
+                classifiers['%d Extra Random Trees' % trees] = clf2
 
     if has_all or 'kNN' in cmd_class:
         # see http://scikit-learn.org/stable/auto_examples/neighbors/plot_classification.html#example-neighbors-plot-classification-py
@@ -250,6 +297,16 @@ def _parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--verbose', type=int, action='store', default=1,
                         help='verbose level, default = 1', choices=range(1, 4))
+    parser.add_argument('--select-features', action='store',
+                        default='on',
+                        help='dis/enable feature selection before '
+                             'training', choices=['on', 'off', 'both'])
+    parser.add_argument('--min-trees', action='store',default=10,type=int,
+                        help='minimum number of trees used in ensemble '
+                             'methods')
+    parser.add_argument('--max-trees', action='store',default=50,type=int,
+                        help='maximum number of trees used in ensemble '
+                             'methods')
     parser.add_argument('--train-size', default=16000, action='store',
                         help='amount of data used for training. Can be either \
                               an int representing the absolute number of \
@@ -269,7 +326,8 @@ def _parse_args():
                         help='select the kernels that should be trained for the\
                               SVM. by default all will be trained')
     parser.add_argument('classifiers', nargs='*', default='all',
-                        choices=['all', 'svm', 'kNN', 'tree'])
+                        choices=['all', 'svm', 'kNN', 'tree', 'random',
+                                 'ensemble'])
     global args
     args = parser.parse_args()
 
@@ -284,17 +342,22 @@ def frange(start, stop, step):
 
 
 def main():
+    secs = time.time()
     _parse_args()
-    classifiers = _prepare_classifiers(args.classifiers)
     datasets = _prepare_data_sets(args.train_size, args.test_size, args.data)
+    classifiers = _prepare_classifiers(args.classifiers)
     quality = _evaluate_classifiers(classifiers, datasets)
 
     # if 'all' in args.classifiers or 'tree' in args.classifiers:
     # _write_dot_file(classifiers['Decision Tree'])
 
     #rank classifiers by score and print highscore list
-    for clf, score in sorted(quality.iteritems(), key=lambda (k, v): (v, k)):
-        print "%.2f %%: %s" % (100 * score, clf)
+    for clf, (score, trainingTime) in sorted(quality.iteritems(), key=lambda
+            (k, v): (v[0], k)):
+        print "%.2f %% in %d secs: %s" % (100 * score, trainingTime,clf)
+
+    secs = time.time() - secs;
+    print 'Total Time: %d seconds' % secs
 
     return
 

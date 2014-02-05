@@ -252,11 +252,48 @@ def _prepare_classifiers(cmd_class=['all']):
                 classifiers['%d Random Forest' % trees] = clf1
                 classifiers['%d Extra Random Trees' % trees] = clf2
 
-    if has_all or 'kNN' in cmd_class:
+    if has_all or 'kNN' in cmd_class or 'rNN' in cmd_class:
         # see http://scikit-learn.org/stable/auto_examples/neighbors/plot_classification.html#example-neighbors-plot-classification-py
-        classifiers['K Nearest Naighbors'] = neighbors.KNeighborsClassifier(
-            15, weights='uniform')
-        # Disabled because of horrible performance
+        selected_weights = args.NN_weights
+	if 'all' in args.NN_weights:
+            selected_weights = ['uniform', 'distance']
+	for weight in selected_weights:
+            if 'kNN' in cmd_class:
+                for k in args.kNN_neighbors:
+                    classifiers['kNN %s k=%d' % (weight, int(k))] = \
+                        neighbors.KNeighborsClassifier(k, weights = weight)
+            if 'rNN' in cmd_class:
+                # XXX: Buggy scikit does not handle the distance weight
+                #
+                # The following error message is being thrown by scikit when
+                # the distance weight is being used. This could not be fixed so
+                # it is being ignored instead.
+                #
+                # Traceback (most recent call last):
+                #   File "lird.py", line 329, in <module>
+                #     main()
+                #   File "lird.py", line 316, in main
+                #     quality = _evaluate_classifiers(classifiers, datasets)
+                #   File "lird.py", line 130, in _evaluate_classifiers
+                #     validationSet)
+                #   File "lird.py", line 90, in _evaluate_calssifier
+                #     pLabels = clf.predict(vVectors)
+                #   File "/usr/lib/pymodules/python2.7/sklearn/neighbors/classification.py", line 307, in predict
+                #     for (pl, w) in zip(pred_labels[inliers], weights)],
+                #   File "/usr/lib/pymodules/python2.7/sklearn/utils/extmath.py", line 305, in weighted_mode
+                #     w = np.zeros(a.shape, dtype=w.dtype) + w
+                # ValueError: operands could not be broadcast together with shapes (47) (194)
+                if weight == 'distance':
+                    continue
+
+                # Assign the outlier class to outliers.
+                outlier_class = labelEncoder.transform([OUTLIER_LABEL])
+                for r in args.rNN_radius:
+                    classifiers['rNN %s r=%f' % (weight, float(r))] = \
+                        neighbors.RadiusNeighborsClassifier(radius = r,
+                            weights = weight, outlier_label = outlier_class)
+
+    # Disabled because of horrible performance
     # classifiers['NuSVC'] = svm.NuSVC()
     return classifiers
 
@@ -332,8 +369,14 @@ def _parse_args():
                         help='select the kernels that should be trained for the\
                               SVM. by default all will be trained')
     parser.add_argument('classifiers', nargs='*', default='all',
-                        choices=['all', 'svm', 'kNN', 'tree', 'random',
+                        choices=['all', 'svm', 'kNN', 'rNN', 'tree', 'random',
                                  'ensemble'])
+    parser.add_argument('--NN-weights', action='store', default=['all'],
+                        choices=['all', 'uniform', 'distance'], nargs='*')
+    parser.add_argument('--kNN-neighbors', action='store', default=[5],
+                        nargs='*', type=int)
+    parser.add_argument('--rNN-radius', action='store', default=[3.5], \
+                        nargs='*', type=float)
     global args
     args = parser.parse_args()
 

@@ -259,9 +259,11 @@ def _prepare_classifiers(cmd_class=['all']):
             selected_weights = ['uniform', 'distance']
 	for weight in selected_weights:
             if 'kNN' in cmd_class:
+                show_knn_warnings = args.verbose > 3
                 for k in args.kNN_neighbors:
                     classifiers['kNN %s k=%d' % (weight, int(k))] = \
-                        neighbors.KNeighborsClassifier(k, weights = weight)
+                        neighbors.KNeighborsClassifier(k, weights = weight,
+                            warn_on_equidistant=show_knn_warnings)
             if 'rNN' in cmd_class:
                 # XXX: Buggy scikit does not handle the distance weight
                 #
@@ -339,7 +341,7 @@ def _parse_args():
     '''
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--verbose', type=int, action='store', default=1,
-                        help='verbose level, default = 1', choices=range(1, 4))
+                        help='verbose level, default = 1', choices=range(1, 5))
     parser.add_argument('--select-features', action='store',
                         default='on',
                         help='dis/enable feature selection before '

@@ -340,45 +340,55 @@ def _parse_args():
     Parse the command line arguments to select test at runtime
     '''
     parser = argparse.ArgumentParser()
-    parser.add_argument('-v', '--verbose', type=int, action='store', default=1,
-                        help='verbose level, default = 1', choices=range(1, 5))
-    parser.add_argument('--select-features', action='store',
-                        default='on',
-                        help='dis/enable feature selection before '
-                             'training', choices=['on', 'off', 'both'])
-    parser.add_argument('--min-trees', action='store',default=10,type=int,
-                        help='minimum number of trees used in ensemble '
-                             'methods')
-    parser.add_argument('--max-trees', action='store',default=50,type=int,
-                        help='maximum number of trees used in ensemble '
-                             'methods')
-    parser.add_argument('--train-size', default=16000, action='store',
+    parser.add_argument('classifiers', nargs='*', default='all',
+                        choices=['all', 'svm', 'kNN', 'rNN', 'tree', 'random',
+                                 'ensemble'])
+
+    group_common = parser.add_argument_group('Common Options')
+    group_common.add_argument('-v', '--verbose', type=int, action='store',
+                        default=1, help='verbose level, default = 1',
+                        choices=range(1, 5))
+    group_common.add_argument('--train-size', default=16000, action='store',
                         help='amount of data used for training. Can be either \
                               an int representing the absolute number of \
                               samples or a float between 0 and 1.0 \
                               representing the ratio of train samples')
-    parser.add_argument('--test-size', default=None, action='store',
+    group_common.add_argument('--test-size', default=None, action='store',
                         help='amount of data used for testing, if not \
                               specified the rest of the data set will be used \
                               Like the train-size this can either be a int or \
                               a float')
-    parser.add_argument('--data', action='store', default=['all'],
+    group_common.add_argument('--data', action='store', default=['all'],
                         choices=['all', 'orig', 'scaled'])
-    parser.add_argument('--svm-kernels', action='store', default=['all'],
+
+    tree_group = parser.add_argument_group('Decision Tree and Ensemble Methods')
+    tree_group.add_argument('--min-trees', action='store',default=10,type=int,
+                        help='minimum number of trees used in ensemble '
+                             'methods')
+    tree_group.add_argument('--max-trees', action='store',default=50,type=int,
+                        help='maximum number of trees used in ensemble '
+                             'methods')
+    parser.add_argument('--select-features', action='store',
+                        default='on',
+                        help='dis/enable feature selection before '
+                             'training', choices=['on', 'off', 'both'])
+
+    svm_group = parser.add_argument_group('Support Vector Machines')
+    svm_group.add_argument('--svm-kernels', action='store', default=['all'],
                         choices=['all', 'rbf', 'linear', 'linear-ovr', 'poly',
                                  'sigmoid'],
                         nargs='*',
                         help='select the kernels that should be trained for the\
                               SVM. by default all will be trained')
-    parser.add_argument('classifiers', nargs='*', default='all',
-                        choices=['all', 'svm', 'kNN', 'rNN', 'tree', 'random',
-                                 'ensemble'])
-    parser.add_argument('--NN-weights', action='store', default=['all'],
+
+    nn_group = parser.add_argument_group('Nearest Neighbors')
+    nn_group.add_argument('--NN-weights', action='store', default=['all'],
                         choices=['all', 'uniform', 'distance'], nargs='*')
-    parser.add_argument('--kNN-neighbors', action='store', default=[5],
+    nn_group.add_argument('--kNN-neighbors', action='store', default=[5],
                         nargs='*', type=int)
-    parser.add_argument('--rNN-radius', action='store', default=[3.5], \
+    nn_group.add_argument('--rNN-radius', action='store', default=[3.5], \
                         nargs='*', type=float)
+    
     global args
     args = parser.parse_args()
 

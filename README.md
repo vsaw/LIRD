@@ -30,5 +30,5 @@ Download Dataset at [http://archive.ics.uci.edu/ml/datasets/Letter+Recognition](
 
 Dependencies
 ------------
-* [scikit-learn](http://scikit-learn.org/stable/install.html)
+* [scikit-learn 0.14.1](http://scikit-learn.org/stable/install.html)
 * [Python 2.7](http://python.org/download/releases/2.7/)

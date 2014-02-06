@@ -108,7 +108,7 @@ def _evaluate_calssifier(clf, trainingSet, validationSet):
         label_names = labelEncoder.classes_
         print '        Classification Report:'
         print metrics.classification_report(vLabels, pLabels,
-                                            target_names=label_names)
+            labelEncoder.transform(label_names), target_names=label_names)
         print '        Confusion Matrix:'
         cm = metrics.confusion_matrix(vLabels, pLabels,
                                       labelEncoder.transform(label_names))

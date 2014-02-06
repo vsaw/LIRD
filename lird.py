@@ -113,7 +113,7 @@ def _evaluate_calssifier(clf, trainingSet, validationSet):
     elif (args.verbose > 1):
         print '        %.2f%% Accuracy' % (score * 100)
 
-    return (score, trainingTime)
+    return (score, trainingTime, validationTime)
 
 
 def _evaluate_classifiers(classifiers, datasets):
@@ -124,15 +124,16 @@ def _evaluate_classifiers(classifiers, datasets):
     quality = {}
     for setKey in datasets.keys():
         if (args.verbose > 1):
-            print 'Using Dataset %s :' % setKey
+            print 'Using Dataset %s:' % setKey
         (trainingSet, validationSet) = datasets[setKey]
+        quality[setKey] = {}
         for clfKey in classifiers.keys():
             if (args.verbose > 1):
-                print '    %s :' % clfKey
+                print '    %s:' % clfKey
             res = _evaluate_calssifier(classifiers[clfKey],
                                        trainingSet,
                                        validationSet)
-            quality[clfKey] = res
+            quality[setKey][clfKey] = res
             if (args.verbose > 1):
                 print ' '
     return quality
@@ -420,9 +421,13 @@ def main():
     # _write_dot_file(classifiers['Decision Tree'])
 
     #rank classifiers by score and print highscore list
-    for clf, (score, trainingTime) in sorted(quality.iteritems(), key=lambda
-            (k, v): (v[0], k)):
-        print "%.2f %% in %d secs: %s" % (100 * score, trainingTime,clf)
+    for setKey in quality.keys():
+        print 'Score on Dataset: %s' % setKey
+        for clf, (score, trainingTime, validationTime) in sorted(quality[setKey].iteritems(),
+                key=lambda (k, v): v[0]):
+            print "%.2f%% in %d + %d secs: %s" % \
+                (100 * score, trainingTime, validationTime, clf)
+        print ''
 
     secs = time.time() - secs;
     print 'Total Time: %d seconds' % secs

@@ -124,12 +124,12 @@ def _evaluate_classifiers(classifiers, datasets):
     quality = {}
     for setKey in datasets.keys():
         if (args.verbose > 1):
-            print 'Using Dataset %s :' % setKey
+            print 'Using Dataset %s:' % setKey
         (trainingSet, validationSet) = datasets[setKey]
         quality[setKey] = {}
         for clfKey in classifiers.keys():
             if (args.verbose > 1):
-                print '    %s :' % clfKey
+                print '    %s:' % clfKey
             res = _evaluate_calssifier(classifiers[clfKey],
                                        trainingSet,
                                        validationSet)

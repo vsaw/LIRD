@@ -113,7 +113,7 @@ def _evaluate_calssifier(clf, trainingSet, validationSet):
     elif (args.verbose > 1):
         print '        %.2f%% Accuracy' % (score * 100)
 
-    return (score, trainingTime)
+    return (score, trainingTime, validationTime)
 
 
 def _evaluate_classifiers(classifiers, datasets):
@@ -423,9 +423,10 @@ def main():
     #rank classifiers by score and print highscore list
     for setKey in quality.keys():
         print 'Score on Dataset: %s' % setKey
-        for clf, (score, trainingTime) in sorted(quality[setKey].iteritems(),
-                key=lambda (k, v): (v[0], k)):
-            print "%.2f %% in %d secs: %s" % (100 * score, trainingTime,clf)
+        for clf, (score, trainingTime, validationTime) in sorted(quality[setKey].iteritems(),
+                key=lambda (k, v): v[0]):
+            print "%.2f%% in %d + %d secs: %s" % \
+                (100 * score, trainingTime, validationTime, clf)
         print ''
 
     secs = time.time() - secs;

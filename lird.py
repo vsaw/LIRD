@@ -188,11 +188,14 @@ def _prepare_classifiers(cmd_class=['all']):
             elif k == 'linear-svc':
                 classifiers['Linear SVC'] = svm.LinearSVC()
             else:
-                g = 0.0
-                if k == 'sigmoid':
-                    # TODO: Document this magic number
-                    # Maximum dot product of the vectors in our data set
-                    g = 1.0 / 962.0
+                if args.svm_gamma is None:
+                    g = 0.0
+                    if k == 'sigmoid':
+                        # TODO: Document this magic number
+                        # Maximum dot product of the vectors in our data set
+                        g = 1.0 / 962.0
+                else:
+                    g = args.svm_gamma
                 classifiers['SVC kernel=%s' % k] = svm.SVC(kernel=k, gamma=g)
     if has_all or 'tree' in cmd_class:
         # see http://scikit-learn.org/stable/modules/tree.html
@@ -381,6 +384,11 @@ def _parse_args():
         choices=SVM_KERNELS, nargs='*',
         help='Select the kernels that should be trained for the SVM. \
         Default: %(default)s')
+    svm_group.add_argument('--svm-gamma', action='store', default=None,
+        type=float,
+        help='Sets the gamma parameter for the SVM kernels. If ommitted it will\
+        be 0.0 for all kernels except the sigmoid kernel where g will be set\
+        to max(abs(<v,w>)) where v and w are vectors from the data set.')
 
     nn_group = parser.add_argument_group('Nearest Neighbors')
     nn_group.add_argument('--NN-weights', action='store', default=['all'],

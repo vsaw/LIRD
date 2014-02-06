@@ -113,6 +113,7 @@ def _evaluate_calssifier(clf, trainingSet, validationSet):
         cm = metrics.confusion_matrix(vLabels, pLabels,
                                       labelEncoder.transform(label_names))
         __print_confusion_matrix(cm, label_names)
+        print ''
     elif (args.verbose > 1):
         print '        %.2f%% Accuracy' % (score * 100)
 

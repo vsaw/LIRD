@@ -324,24 +324,6 @@ def _prepare_data_sets(train_size, test_size, sets):
     return datasets
 
 
-def _write_dot_file(dtClf, filename='dtClf.dot'):
-    '''
-    Creates dot file from Decision Tree classifier
-    Use graphviz dot tool to create decision tree via
-    $ dot -Tpdf out/dtCls.dot -o out/dtCls.pdf
-    for more info see http://graphviz.org/
-    '''
-    try:
-        import pydot
-
-        f = open('out/' + filename, 'w')
-        tree.export_graphviz(dtClf, out_file=f)
-        print 'Written %s file' % ('out/' + filename)
-        return
-    except ImportError:
-        return
-
-
 def _parse_args():
     '''
     Parse the command line arguments to select test at runtime
@@ -426,9 +408,6 @@ def main():
     datasets = _prepare_data_sets(args.train_size, args.test_size, args.data)
     classifiers = _prepare_classifiers(args.classifiers)
     quality = _evaluate_classifiers(classifiers, datasets)
-
-    # if 'all' in args.classifiers or 'tree' in args.classifiers:
-    # _write_dot_file(classifiers['Decision Tree'])
 
     #rank classifiers by score and print highscore list
     for setKey in quality.keys():

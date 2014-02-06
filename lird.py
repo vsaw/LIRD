@@ -29,6 +29,9 @@ labelEncoder = None
 # in the data set.
 OUTLIER_LABEL = '?'
 
+# A list of all supported SVM kernels and classifiers
+SVM_KERNELS = ['linear-svc', 'linear-ovr', 'linear', 'poly', 'rbf', 'sigmoid']
+
 def _parse_csv(filename, typeCast=int):
     '''
     Parse data from CSV and return (y,X) with y a array of labels and X array
@@ -176,8 +179,7 @@ def _prepare_classifiers(cmd_class=['all']):
         # see http://scikit-learn.org/stable/modules/svm.html#classification
         kernels = args.svm_kernels
         if 'all' in kernels:
-            kernels = ['linear-svc', 'linear-ovr', 'linear', 'poly', 'rbf',
-                       'sigmoid']
+            kernels = SVM_KERNELS
         for k in kernels:
             if k == 'linear-ovr':
                 classifiers[
@@ -376,8 +378,7 @@ def _parse_args():
 
     svm_group = parser.add_argument_group('Support Vector Machines')
     svm_group.add_argument('--svm-kernels', action='store', default=['all'],
-        choices=['all', 'rbf', 'linear', 'linear-ovr', 'poly', 'sigmoid'],
-        nargs='*',
+        choices=SVM_KERNELS, nargs='*',
         help='Select the kernels that should be trained for the SVM. \
         Default: %(default)s')
 
